@@ -471,6 +471,8 @@ function getRandomEdges(ids) {
     return edges;
 }
 
-app.listen(1989, function () {
+var port = process.env.PORT || 1989;
+
+app.listen(port, function () {
     console.log('Server is running on :1989')
 });
