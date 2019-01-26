@@ -1,0 +1,135 @@
+<html>
+
+<head>
+    <title>Tłum ludzi</title>
+    <script type="text/javascript" src="jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="vis/dist/vis.js"></script>
+    <link href="vis/dist/vis.css" rel="stylesheet" type="text/css" />
+    <link href='http://fonts.googleapis.com/css?family=Alegreya&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="pushy-buttons.css">
+    <style type="text/css">
+        #graph {
+            width: 800px;
+            height: 600px;
+            border: 1px solid lightgray;
+            margin: 0 auto;
+        }
+
+        #report {
+            font-family: 'Alegreya', sans-serif;
+            font-size: 20px
+        }
+
+        .space-around {
+            margin-top: 30px;
+            margin-bottom: 30px;
+            margin-left: 30px;
+            margin-right: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <p align="center" style="margin-top: 30px; margin-bottom: 30px;">
+        <button id="minus" onclick="minusTen()" class="btn btn--lg btn--red">-10</button>
+        <button onclick="fetchData()" class="btn btn--lg btn--blue">Nowe dane</button>
+        <button onclick="simulate()" class="btn btn--lg btn--blue">Symuluj</button>
+        <button id="plus" onclick="plusTen()" class="btn btn--lg btn--green">+10</button>
+    </p>
+    <div id="graph"></div>
+    <p id="report" class="space-around" align="center"></p>
+
+
+    <script type="text/javascript">
+        var numberOfNodes = 10;
+
+        var updateReport = function (info) {
+            console.log(info);
+            var container = document.getElementById("report");
+            var nodes = info.nodes;
+            var edges = info.edges;
+            var result = "";
+            for (i = 0; i < edges.length; i++) {
+                var personId = edges[i].from;
+                var targetId = edges[i].to;
+                var personName = nodes.find(n => parseInt(n.id) === personId).label;
+                var targetName = nodes.find(n => parseInt(n.id) === targetId).label;
+                result += personName + " chce stanąć za " + targetName + ".\n";
+            }
+            container.innerText = result;
+        };
+
+        var updateButtonsVisibility = function () {
+            var minusButton = document.getElementById("minus");
+            var plusButton = document.getElementById("plus");
+
+            plusButton.className = "btn btn--lg btn--green";
+            minusButton.className = "btn btn--lg btn--red";
+            if (numberOfNodes === 100) {
+                plusButton.className = "btn btn--lg btn--disabled";
+            } else if (numberOfNodes === 10) {
+                minusButton.className = "btn btn--lg btn--disabled";
+            }
+
+
+            plusButton.disabled = false;
+            minusButton.disabled = false;
+            if (numberOfNodes === 100) {
+                plusButton.disabled = true;
+            } else if (numberOfNodes === 10) {
+                minusButton.disabled = true;
+            }
+        }
+        
+        updateButtonsVisibility();
+
+        var rawData = {};
+        var fetchData = function () {
+            $.get("/api?numberOfNodes=" + numberOfNodes, function (data) {
+                rawData = data;
+                var dataWithoutEdges = {
+                    nodes: data.nodes,
+                    edges: [],
+                    options: data.options,
+                }
+                var container = document.getElementById("graph");
+                var network = new vis.Network(container, dataWithoutEdges, dataWithoutEdges.options);
+                updateReport(rawData);
+            });
+        }
+
+        var simulate = function () {
+            var container = document.getElementById("graph");
+            var options = {
+                edges: {
+                    arrows: {
+                        to: {
+                            enabled: true
+                        }
+                    }
+                }
+            };
+            var network = new vis.Network(container, rawData, options);
+        }
+
+        var minusTen = function () {
+            if (numberOfNodes > 10) {
+                numberOfNodes -= 10;
+            }
+            updateButtonsVisibility();
+            fetchData();
+        }
+
+        var plusTen = function () {
+            if (numberOfNodes <= 90) {
+                numberOfNodes += 10;
+            }
+            updateButtonsVisibility();
+            fetchData();
+        }
+
+        fetchData();
+    </script>
+</body>
+
+</html>
